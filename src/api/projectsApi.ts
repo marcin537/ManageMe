@@ -1,10 +1,6 @@
 import type { Project, ProjectCreateInput } from '../types/project'
 import { PROJECTS_STORAGE_KEY } from './storageKey'
 
-/**
- * API do zarządzania projektami.
- * Obecnie używa localStorage – w przyszłości można podmienić na NoSQL w chmurze.
- */
 class ProjectsApi {
   private storageKey = PROJECTS_STORAGE_KEY
 

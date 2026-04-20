@@ -1,10 +1,6 @@
 import type { Historyjka, HistoryjkaCreateInput } from '../types/historyjka'
 import { HISTORYJKI_STORAGE_KEY } from './storageKey'
 
-/**
- * API do zarządzania historyjkami (funkcjonalnościami) projektu.
- * Używa localStorage – w przyszłości można podmienić na backend.
- */
 class HistoryjkiApi {
   private storageKey = HISTORYJKI_STORAGE_KEY
 

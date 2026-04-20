@@ -4,6 +4,7 @@ import type { Historyjka, StanHistoryjki } from '../types/historyjka'
 import { historyjkiApi } from '../api/historyjkiApi'
 import { currentUserService } from '../services/currentUserService'
 import HistoryjkaForm from './HistoryjkaForm.vue'
+import ZadanieKanban from './ZadanieKanban.vue'
 
 const props = defineProps<{
   projectId: string
@@ -14,6 +15,8 @@ const loading = ref(true)
 const showForm = ref(false)
 const editingHistoryjka = ref<Historyjka | null>(null)
 const filterStan = ref<StanHistoryjki | 'all'>('all')
+
+const activeHistoryjkaKanban = ref<string | null>(null)
 
 const STANY: { value: StanHistoryjki | 'all'; label: string }[] = [
   { value: 'all', label: 'Wszystkie' },
@@ -114,6 +117,16 @@ function priorytetLabel(p: string) {
   }
   return map[p] ?? p
 }
+
+function toggleKanban(id: string) {
+  if (activeHistoryjkaKanban.value === id) activeHistoryjkaKanban.value = null
+  else activeHistoryjkaKanban.value = id
+}
+
+function onHistoryjkaUpdated(updated: Historyjka) {
+  const i = historyjki.value.findIndex(h => h.id === updated.id)
+  if (i !== -1) historyjki.value[i] = updated
+}
 </script>
 
 <template>
@@ -146,17 +159,23 @@ function priorytetLabel(p: string) {
           <h3 class="section-title">Do zrobienia</h3>
           <ul class="cards">
             <li v-for="h in todo" :key="h.id" class="card">
-              <div class="card-body">
-                <div class="card-meta">
-                  <span class="badge" :class="'priorytet-' + h.priorytet">{{ priorytetLabel(h.priorytet) }}</span>
-                  <span class="date">{{ formatDate(h.dataUtworzenia) }}</span>
+              <div class="card-header-row">
+                <div class="card-body">
+                  <div class="card-meta">
+                    <span class="badge" :class="'priorytet-' + h.priorytet">{{ priorytetLabel(h.priorytet) }}</span>
+                    <span class="date">{{ formatDate(h.dataUtworzenia) }}</span>
+                  </div>
+                  <h4 class="card-title">{{ h.nazwa }}</h4>
+                  <p v-if="h.opis" class="card-desc">{{ h.opis }}</p>
                 </div>
-                <h4 class="card-title">{{ h.nazwa }}</h4>
-                <p v-if="h.opis" class="card-desc">{{ h.opis }}</p>
+                <div class="card-actions">
+                  <button class="btn btn-icon" title="Zadania (Kanban)" @click="toggleKanban(h.id)">📋</button>
+                  <button class="btn btn-icon" title="Edytuj" @click="openEdit(h)">✎</button>
+                  <button class="btn btn-icon btn-danger" title="Usuń" @click="remove(h)">✕</button>
+                </div>
               </div>
-              <div class="card-actions">
-                <button class="btn btn-icon" title="Edytuj" @click="openEdit(h)">✎</button>
-                <button class="btn btn-icon btn-danger" title="Usuń" @click="remove(h)">✕</button>
+              <div class="card-kanban-container" v-if="activeHistoryjkaKanban === h.id">
+                <ZadanieKanban :historyjka-id="h.id" @historyjka-updated="onHistoryjkaUpdated" />
               </div>
             </li>
           </ul>
@@ -165,17 +184,23 @@ function priorytetLabel(p: string) {
           <h3 class="section-title">W trakcie</h3>
           <ul class="cards">
             <li v-for="h in doing" :key="h.id" class="card">
-              <div class="card-body">
-                <div class="card-meta">
-                  <span class="badge" :class="'priorytet-' + h.priorytet">{{ priorytetLabel(h.priorytet) }}</span>
-                  <span class="date">{{ formatDate(h.dataUtworzenia) }}</span>
+              <div class="card-header-row">
+                <div class="card-body">
+                  <div class="card-meta">
+                    <span class="badge" :class="'priorytet-' + h.priorytet">{{ priorytetLabel(h.priorytet) }}</span>
+                    <span class="date">{{ formatDate(h.dataUtworzenia) }}</span>
+                  </div>
+                  <h4 class="card-title">{{ h.nazwa }}</h4>
+                  <p v-if="h.opis" class="card-desc">{{ h.opis }}</p>
                 </div>
-                <h4 class="card-title">{{ h.nazwa }}</h4>
-                <p v-if="h.opis" class="card-desc">{{ h.opis }}</p>
+                <div class="card-actions">
+                  <button class="btn btn-icon" title="Zadania (Kanban)" @click="toggleKanban(h.id)">📋</button>
+                  <button class="btn btn-icon" title="Edytuj" @click="openEdit(h)">✎</button>
+                  <button class="btn btn-icon btn-danger" title="Usuń" @click="remove(h)">✕</button>
+                </div>
               </div>
-              <div class="card-actions">
-                <button class="btn btn-icon" title="Edytuj" @click="openEdit(h)">✎</button>
-                <button class="btn btn-icon btn-danger" title="Usuń" @click="remove(h)">✕</button>
+              <div class="card-kanban-container" v-if="activeHistoryjkaKanban === h.id">
+                <ZadanieKanban :historyjka-id="h.id" @historyjka-updated="onHistoryjkaUpdated" />
               </div>
             </li>
           </ul>
@@ -184,6 +209,32 @@ function priorytetLabel(p: string) {
           <h3 class="section-title">Zamknięte</h3>
           <ul class="cards">
             <li v-for="h in done" :key="h.id" class="card">
+              <div class="card-header-row">
+                <div class="card-body">
+                  <div class="card-meta">
+                    <span class="badge" :class="'priorytet-' + h.priorytet">{{ priorytetLabel(h.priorytet) }}</span>
+                    <span class="date">{{ formatDate(h.dataUtworzenia) }}</span>
+                  </div>
+                  <h4 class="card-title">{{ h.nazwa }}</h4>
+                  <p v-if="h.opis" class="card-desc">{{ h.opis }}</p>
+                </div>
+                <div class="card-actions">
+                  <button class="btn btn-icon" title="Zadania (Kanban)" @click="toggleKanban(h.id)">📋</button>
+                  <button class="btn btn-icon" title="Edytuj" @click="openEdit(h)">✎</button>
+                  <button class="btn btn-icon btn-danger" title="Usuń" @click="remove(h)">✕</button>
+                </div>
+              </div>
+              <div class="card-kanban-container" v-if="activeHistoryjkaKanban === h.id">
+                <ZadanieKanban :historyjka-id="h.id" @historyjka-updated="onHistoryjkaUpdated" />
+              </div>
+            </li>
+          </ul>
+        </section>
+      </template>
+      <section v-else class="section">
+        <ul class="cards">
+          <li v-for="h in filteredHistoryjki" :key="h.id" class="card">
+            <div class="card-header-row">
               <div class="card-body">
                 <div class="card-meta">
                   <span class="badge" :class="'priorytet-' + h.priorytet">{{ priorytetLabel(h.priorytet) }}</span>
@@ -193,27 +244,13 @@ function priorytetLabel(p: string) {
                 <p v-if="h.opis" class="card-desc">{{ h.opis }}</p>
               </div>
               <div class="card-actions">
+                <button class="btn btn-icon" title="Zadania (Kanban)" @click="toggleKanban(h.id)">📋</button>
                 <button class="btn btn-icon" title="Edytuj" @click="openEdit(h)">✎</button>
                 <button class="btn btn-icon btn-danger" title="Usuń" @click="remove(h)">✕</button>
               </div>
-            </li>
-          </ul>
-        </section>
-      </template>
-      <section v-else class="section">
-        <ul class="cards">
-          <li v-for="h in filteredHistoryjki" :key="h.id" class="card">
-            <div class="card-body">
-              <div class="card-meta">
-                <span class="badge" :class="'priorytet-' + h.priorytet">{{ priorytetLabel(h.priorytet) }}</span>
-                <span class="date">{{ formatDate(h.dataUtworzenia) }}</span>
-              </div>
-              <h4 class="card-title">{{ h.nazwa }}</h4>
-              <p v-if="h.opis" class="card-desc">{{ h.opis }}</p>
             </div>
-            <div class="card-actions">
-              <button class="btn btn-icon" title="Edytuj" @click="openEdit(h)">✎</button>
-              <button class="btn btn-icon btn-danger" title="Usuń" @click="remove(h)">✕</button>
+            <div class="card-kanban-container" v-if="activeHistoryjkaKanban === h.id">
+              <ZadanieKanban :historyjka-id="h.id" @historyjka-updated="onHistoryjkaUpdated" />
             </div>
           </li>
         </ul>
@@ -294,13 +331,18 @@ function priorytetLabel(p: string) {
 
 .card {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
   padding: 16px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--code-bg);
+}
+
+.card-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .card-body {
