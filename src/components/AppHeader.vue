@@ -4,8 +4,10 @@ import { currentUserService } from '../services/currentUserService'
 import { useActiveProject } from '../composables/useActiveProject'
 import { projectsApi } from '../api/projectsApi'
 import type { Project } from '../types/project'
+import { useTheme } from '../composables/useTheme'
 
 const { activeProjectId, setActiveProject, initActiveProject } = useActiveProject()
+const { theme, toggleTheme } = useTheme()
 
 const emit = defineEmits<{
   (e: 'manage-projects'): void
@@ -56,152 +58,65 @@ watch(showProjectsDropdown, async (open) => {
 </script>
 
 <template>
-  <header class="app-header">
-    <div class="brand">
-      <h1 class="logo">TaskFlow</h1>
-    </div>
+  <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom shadow-sm">
+    <div class="container-fluid px-4 py-1">
+      <a class="navbar-brand fw-bold text-primary" href="#">TaskFlow</a>
 
-    <div class="center">
-      <div ref="selectorRef" class="project-selector">
-        <button
-          class="project-btn"
-          :class="{ placeholder: !activeProject }"
-          @click="toggleDropdown"
-        >
-          {{ activeProject?.nazwa ?? 'Wybierz aktywny' }}
-        </button>
-        <div v-if="showProjectsDropdown" class="dropdown">
+      <div class="d-flex w-100 justify-content-center position-absolute start-0 pointer-events-none" style="pointer-events: none;">
+        <div ref="selectorRef" class="position-relative" style="pointer-events: auto;">
           <button
-            v-if="activeProject"
-            class="dropdown-item"
-            @click="selectProject(null)"
+            class="btn btn-outline-secondary dropdown-toggle"
+            type="button"
+            @click="toggleDropdown"
+            style="min-width: 250px;"
           >
-            — Brak projektu —
+            {{ activeProject?.nazwa ?? 'Wybierz aktywny projekt' }}
           </button>
-          <button
-            v-for="p in projects"
-            :key="p.id"
-            class="dropdown-item"
-            :class="{ active: p.id === activeProjectId }"
-            @click="selectProject(p.id)"
-          >
-            {{ p.nazwa }}
-          </button>
-          <p v-if="projects.length === 0" class="dropdown-empty">Brak projektów</p>
+          
+          <ul v-if="showProjectsDropdown" class="dropdown-menu show position-absolute w-100 mt-1 shadow">
+            <li>
+              <button
+                v-if="activeProject"
+                class="dropdown-item text-muted"
+                @click="selectProject(null)"
+              >
+                — Brak projektu —
+              </button>
+            </li>
+            <li v-for="p in projects" :key="p.id">
+              <button
+                class="dropdown-item"
+                :class="{ active: p.id === activeProjectId }"
+                @click="selectProject(p.id)"
+              >
+                {{ p.nazwa }}
+              </button>
+            </li>
+            <li v-if="projects.length === 0">
+              <span class="dropdown-item-text text-muted">Brak projektów</span>
+            </li>
+          </ul>
         </div>
       </div>
-    </div>
 
-    <div class="user">
-      <button class="link-btn" @click="emit('manage-projects')">Projekty</button>
-      <span class="user-name">{{ userFullName }}</span>
+      <div class="ms-auto d-flex align-items-center gap-3" style="z-index: 10;">
+        <button class="btn btn-link text-decoration-none-hover text-body" @click="emit('manage-projects')">
+          Zarządzaj Projektami
+        </button>
+        <span class="navbar-text fw-medium text-body-emphasis">
+          {{ userFullName }}
+        </span>
+        <button class="btn btn-outline-secondary d-flex align-items-center justify-content-center rounded-circle" style="width: 40px; height: 40px;" @click="toggleTheme" title="Zmień motyw">
+          <span v-if="theme === 'light'">🌙</span>
+          <span v-else>☀️</span>
+        </button>
+      </div>
     </div>
-  </header>
+  </nav>
 </template>
 
 <style scoped>
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 24px;
-  border-bottom: 1px solid var(--border);
-  background: var(--code-bg);
-}
-
-.brand .logo {
-  margin: 0;
-  font-size: 20px;
-}
-
-.center {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
-.project-selector {
-  position: relative;
-}
-
-.project-btn {
-  padding: 8px 16px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--text-h);
-  font: inherit;
-  cursor: pointer;
-  min-width: 200px;
-}
-
-.project-btn.placeholder {
-  color: var(--text);
-}
-
-.dropdown {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 4px;
-  min-width: 220px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  padding: 4px;
-  z-index: 50;
-}
-
-.dropdown-item {
+.dropdown-menu.show {
   display: block;
-  width: 100%;
-  padding: 10px 12px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-h);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.dropdown-item:hover,
-.dropdown-item.active {
-  background: var(--accent-bg);
-}
-
-.dropdown-empty {
-  padding: 12px;
-  margin: 0;
-  color: var(--text);
-  font-size: 14px;
-}
-
-.user {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.link-btn {
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--text);
-  font: inherit;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.link-btn:hover {
-  color: var(--accent);
-}
-
-.user-name {
-  font-size: 14px;
-  color: var(--text-h);
 }
 </style>

@@ -109,12 +109,16 @@ function formatDate(iso: string) {
   })
 }
 
-function priorytetLabel(p: string) {
+function bPriorityClass(p: string) {
   const map: Record<string, string> = {
-    niski: 'Niski',
-    średni: 'Średni',
-    wysoki: 'Wysoki',
+    niski: 'bg-success bg-opacity-10 text-success border border-success border-opacity-25',
+    średni: 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25',
+    wysoki: 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25',
   }
+  return map[p] ?? 'bg-secondary bg-opacity-10 text-secondary'
+}
+function priorytetLabel(p: string) {
+  const map: Record<string, string> = { niski: 'Niski', średni: 'Średni', wysoki: 'Wysoki' }
   return map[p] ?? p
 }
 
@@ -130,127 +134,166 @@ function onHistoryjkaUpdated(updated: Historyjka) {
 </script>
 
 <template>
-  <div class="historyjki-list">
-    <header class="header">
-      <h2>Historyjki</h2>
-      <div class="toolbar">
-        <select v-model="filterStan" class="filter-select">
+  <div class="container py-2" style="max-width: 1000px;">
+    <header class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 border-bottom pb-3 gap-3">
+      <h2 class="m-0 fw-bold fs-4">Rejestr Historyjek</h2>
+      <div class="d-flex align-items-center gap-2">
+        <select v-model="filterStan" class="form-select form-select-sm" style="width: auto;">
           <option v-for="s in STANY" :key="s.value" :value="s.value">
             {{ s.label }}
           </option>
         </select>
-        <button class="btn btn-primary" @click="openCreate">+ Nowa historyjka</button>
+        <button class="btn btn-primary btn-sm px-3 shadow-sm" @click="openCreate">
+          + Dodaj
+        </button>
       </div>
     </header>
 
-    <div v-if="loading" class="loading">Ładowanie…</div>
-
-    <div v-else-if="!projectId" class="empty">
-      Wybierz projekt w nagłówku, aby zarządzać historyjkami.
+    <div v-if="loading" class="d-flex justify-content-center p-5">
+      <div class="spinner-border text-primary" role="status"></div>
     </div>
 
-    <div v-else-if="filteredHistoryjki.length === 0" class="empty">
-      Brak historyjek. Kliknij „Nowa historyjka”, aby dodać pierwszą.
+    <div v-else-if="!projectId" class="text-center py-5 text-muted bg-body-tertiary rounded border">
+      <p class="mb-0">Wybierz projekt w nagłówku, aby zarządzać historyjkami.</p>
     </div>
 
-    <div v-else class="sections">
+    <div v-else-if="filteredHistoryjki.length === 0" class="text-center py-5 text-muted bg-body-tertiary rounded border">
+      <p class="mb-0">Brak historyjek w tym widoku.</p>
+      <small>Zmień filtr lub utwórz nową historyjkę.</small>
+    </div>
+
+    <div v-else class="d-flex flex-column gap-4">
       <template v-if="filterStan === 'all'">
-        <section v-if="todo.length" class="section">
-          <h3 class="section-title">Do zrobienia</h3>
-          <ul class="cards">
-            <li v-for="h in todo" :key="h.id" class="card">
-              <div class="card-header-row">
-                <div class="card-body">
-                  <div class="card-meta">
-                    <span class="badge" :class="'priorytet-' + h.priorytet">{{ priorytetLabel(h.priorytet) }}</span>
-                    <span class="date">{{ formatDate(h.dataUtworzenia) }}</span>
+        <!-- Do zrobienia -->
+        <section v-if="todo.length">
+          <h3 class="fs-6 fw-bold text-uppercase text-secondary mb-3 d-flex align-items-center gap-2">
+            <span class="bg-secondary rounded-circle d-inline-block" style="width: 8px; height: 8px;"></span>
+            Do zrobienia
+          </h3>
+          <ul class="list-unstyled d-flex flex-column gap-3 mb-0">
+            <li v-for="h in todo" :key="h.id" class="card shadow-sm border-0">
+              <div class="card-body p-3 p-md-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3">
+                  <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                      <span class="badge" :class="bPriorityClass(h.priorytet)">{{ priorytetLabel(h.priorytet) }}</span>
+                      <small class="text-muted">{{ formatDate(h.dataUtworzenia) }}</small>
+                    </div>
+                    <h4 class="card-title h5 fw-semibold">{{ h.nazwa }}</h4>
+                    <p v-if="h.opis" class="card-text text-muted mb-0" style="white-space: pre-wrap;">{{ h.opis }}</p>
                   </div>
-                  <h4 class="card-title">{{ h.nazwa }}</h4>
-                  <p v-if="h.opis" class="card-desc">{{ h.opis }}</p>
-                </div>
-                <div class="card-actions">
-                  <button class="btn btn-icon" title="Zadania (Kanban)" @click="toggleKanban(h.id)">📋</button>
-                  <button class="btn btn-icon" title="Edytuj" @click="openEdit(h)">✎</button>
-                  <button class="btn btn-icon btn-danger" title="Usuń" @click="remove(h)">✕</button>
+                  <div class="btn-group flex-shrink-0">
+                    <button class="btn btn-outline-secondary btn-sm" title="Zadania (Kanban)" @click="toggleKanban(h.id)">
+                      📋 Zadania
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" title="Edytuj" @click="openEdit(h)">✎</button>
+                    <button class="btn btn-outline-danger btn-sm" title="Usuń" @click="remove(h)">✕</button>
+                  </div>
                 </div>
               </div>
-              <div class="card-kanban-container" v-if="activeHistoryjkaKanban === h.id">
-                <ZadanieKanban :historyjka-id="h.id" @historyjka-updated="onHistoryjkaUpdated" />
+              <div class="card-footer bg-body-tertiary border-top p-0 border-0" v-if="activeHistoryjkaKanban === h.id">
+                <div class="p-3 p-md-4">
+                  <ZadanieKanban :historyjka-id="h.id" @historyjka-updated="onHistoryjkaUpdated" />
+                </div>
               </div>
             </li>
           </ul>
         </section>
-        <section v-if="doing.length" class="section">
-          <h3 class="section-title">W trakcie</h3>
-          <ul class="cards">
-            <li v-for="h in doing" :key="h.id" class="card">
-              <div class="card-header-row">
-                <div class="card-body">
-                  <div class="card-meta">
-                    <span class="badge" :class="'priorytet-' + h.priorytet">{{ priorytetLabel(h.priorytet) }}</span>
-                    <span class="date">{{ formatDate(h.dataUtworzenia) }}</span>
+
+        <!-- W trakcie -->
+        <section v-if="doing.length">
+          <h3 class="fs-6 fw-bold text-uppercase text-primary mb-3 d-flex align-items-center gap-2 mt-4">
+            <span class="bg-primary rounded-circle d-inline-block" style="width: 8px; height: 8px;"></span>
+            W trakcie
+          </h3>
+          <ul class="list-unstyled d-flex flex-column gap-3 mb-0">
+            <li v-for="h in doing" :key="h.id" class="card shadow-sm border-0 border-start border-primary border-4">
+              <div class="card-body p-3 p-md-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3">
+                  <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                      <span class="badge" :class="bPriorityClass(h.priorytet)">{{ priorytetLabel(h.priorytet) }}</span>
+                      <small class="text-muted">{{ formatDate(h.dataUtworzenia) }}</small>
+                    </div>
+                    <h4 class="card-title h5 fw-semibold">{{ h.nazwa }}</h4>
+                    <p v-if="h.opis" class="card-text text-muted mb-0" style="white-space: pre-wrap;">{{ h.opis }}</p>
                   </div>
-                  <h4 class="card-title">{{ h.nazwa }}</h4>
-                  <p v-if="h.opis" class="card-desc">{{ h.opis }}</p>
-                </div>
-                <div class="card-actions">
-                  <button class="btn btn-icon" title="Zadania (Kanban)" @click="toggleKanban(h.id)">📋</button>
-                  <button class="btn btn-icon" title="Edytuj" @click="openEdit(h)">✎</button>
-                  <button class="btn btn-icon btn-danger" title="Usuń" @click="remove(h)">✕</button>
+                  <div class="btn-group flex-shrink-0">
+                    <button class="btn btn-outline-secondary btn-sm" title="Zadania (Kanban)" @click="toggleKanban(h.id)">📋 Zadania</button>
+                    <button class="btn btn-outline-secondary btn-sm" title="Edytuj" @click="openEdit(h)">✎</button>
+                    <button class="btn btn-outline-danger btn-sm" title="Usuń" @click="remove(h)">✕</button>
+                  </div>
                 </div>
               </div>
-              <div class="card-kanban-container" v-if="activeHistoryjkaKanban === h.id">
-                <ZadanieKanban :historyjka-id="h.id" @historyjka-updated="onHistoryjkaUpdated" />
+              <div class="card-footer bg-body-tertiary border-top p-0 border-0" v-if="activeHistoryjkaKanban === h.id">
+                <div class="p-3 p-md-4">
+                  <ZadanieKanban :historyjka-id="h.id" @historyjka-updated="onHistoryjkaUpdated" />
+                </div>
               </div>
             </li>
           </ul>
         </section>
-        <section v-if="done.length" class="section">
-          <h3 class="section-title">Zamknięte</h3>
-          <ul class="cards">
-            <li v-for="h in done" :key="h.id" class="card">
-              <div class="card-header-row">
-                <div class="card-body">
-                  <div class="card-meta">
-                    <span class="badge" :class="'priorytet-' + h.priorytet">{{ priorytetLabel(h.priorytet) }}</span>
-                    <span class="date">{{ formatDate(h.dataUtworzenia) }}</span>
+
+        <!-- Zamknięte -->
+        <section v-if="done.length">
+          <h3 class="fs-6 fw-bold text-uppercase text-success mb-3 d-flex align-items-center gap-2 mt-4">
+            <span class="bg-success rounded-circle d-inline-block" style="width: 8px; height: 8px;"></span>
+            Zamknięte
+          </h3>
+          <ul class="list-unstyled d-flex flex-column gap-3 mb-0">
+            <li v-for="h in done" :key="h.id" class="card shadow-sm border-0 opacity-75">
+              <div class="card-body p-3 p-md-4 text-muted">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3">
+                  <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                      <span class="badge bg-secondary text-white">{{ priorytetLabel(h.priorytet) }}</span>
+                      <small>{{ formatDate(h.dataUtworzenia) }}</small>
+                    </div>
+                    <h4 class="card-title h5 fw-semibold text-decoration-line-through">{{ h.nazwa }}</h4>
+                    <p v-if="h.opis" class="card-text mb-0" style="white-space: pre-wrap;">{{ h.opis }}</p>
                   </div>
-                  <h4 class="card-title">{{ h.nazwa }}</h4>
-                  <p v-if="h.opis" class="card-desc">{{ h.opis }}</p>
-                </div>
-                <div class="card-actions">
-                  <button class="btn btn-icon" title="Zadania (Kanban)" @click="toggleKanban(h.id)">📋</button>
-                  <button class="btn btn-icon" title="Edytuj" @click="openEdit(h)">✎</button>
-                  <button class="btn btn-icon btn-danger" title="Usuń" @click="remove(h)">✕</button>
+                  <div class="btn-group flex-shrink-0">
+                    <button class="btn btn-outline-secondary btn-sm" title="Zadania (Kanban)" @click="toggleKanban(h.id)">📋 Zadania</button>
+                    <button class="btn btn-outline-secondary btn-sm" title="Edytuj" @click="openEdit(h)">✎</button>
+                    <button class="btn btn-outline-danger btn-sm" title="Usuń" @click="remove(h)">✕</button>
+                  </div>
                 </div>
               </div>
-              <div class="card-kanban-container" v-if="activeHistoryjkaKanban === h.id">
-                <ZadanieKanban :historyjka-id="h.id" @historyjka-updated="onHistoryjkaUpdated" />
+              <div class="card-footer bg-body-tertiary border-top p-0 border-0" v-if="activeHistoryjkaKanban === h.id">
+                <div class="p-3 p-md-4 opacity-100">
+                  <ZadanieKanban :historyjka-id="h.id" @historyjka-updated="onHistoryjkaUpdated" />
+                </div>
               </div>
             </li>
           </ul>
         </section>
       </template>
-      <section v-else class="section">
-        <ul class="cards">
-          <li v-for="h in filteredHistoryjki" :key="h.id" class="card">
-            <div class="card-header-row">
-              <div class="card-body">
-                <div class="card-meta">
-                  <span class="badge" :class="'priorytet-' + h.priorytet">{{ priorytetLabel(h.priorytet) }}</span>
-                  <span class="date">{{ formatDate(h.dataUtworzenia) }}</span>
+
+      <!-- Widok filtrowany -->
+      <section v-else>
+        <ul class="list-unstyled d-flex flex-column gap-3">
+          <li v-for="h in filteredHistoryjki" :key="h.id" class="card shadow-sm border-0">
+            <div class="card-body p-3 p-md-4">
+              <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3">
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge" :class="bPriorityClass(h.priorytet)">{{ priorytetLabel(h.priorytet) }}</span>
+                    <small class="text-muted">{{ formatDate(h.dataUtworzenia) }}</small>
+                  </div>
+                  <h4 class="card-title h5 fw-semibold">{{ h.nazwa }}</h4>
+                  <p v-if="h.opis" class="card-text text-muted mb-0" style="white-space: pre-wrap;">{{ h.opis }}</p>
                 </div>
-                <h4 class="card-title">{{ h.nazwa }}</h4>
-                <p v-if="h.opis" class="card-desc">{{ h.opis }}</p>
-              </div>
-              <div class="card-actions">
-                <button class="btn btn-icon" title="Zadania (Kanban)" @click="toggleKanban(h.id)">📋</button>
-                <button class="btn btn-icon" title="Edytuj" @click="openEdit(h)">✎</button>
-                <button class="btn btn-icon btn-danger" title="Usuń" @click="remove(h)">✕</button>
+                <div class="btn-group flex-shrink-0">
+                  <button class="btn btn-outline-secondary btn-sm" title="Zadania (Kanban)" @click="toggleKanban(h.id)">📋 Zadania</button>
+                  <button class="btn btn-outline-secondary btn-sm" title="Edytuj" @click="openEdit(h)">✎</button>
+                  <button class="btn btn-outline-danger btn-sm" title="Usuń" @click="remove(h)">✕</button>
+                </div>
               </div>
             </div>
-            <div class="card-kanban-container" v-if="activeHistoryjkaKanban === h.id">
-              <ZadanieKanban :historyjka-id="h.id" @historyjka-updated="onHistoryjkaUpdated" />
+            <div class="card-footer bg-body-tertiary border-top p-0 border-0" v-if="activeHistoryjkaKanban === h.id">
+              <div class="p-3 p-md-4">
+                <ZadanieKanban :historyjka-id="h.id" @historyjka-updated="onHistoryjkaUpdated" />
+              </div>
             </div>
           </li>
         </ul>
@@ -264,170 +307,3 @@ function onHistoryjkaUpdated(updated: Historyjka) {
     />
   </div>
 </template>
-
-<style scoped>
-.historyjki-list {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.header h2 {
-  margin: 0;
-  font-size: 22px;
-}
-
-.toolbar {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.filter-select {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font: inherit;
-  background: var(--code-bg);
-  color: var(--text-h);
-}
-
-.loading,
-.empty {
-  color: var(--text);
-  padding: 40px;
-  text-align: center;
-}
-
-.sections {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.section-title {
-  margin: 0 0 12px;
-  font-size: 16px;
-  color: var(--text);
-}
-
-.cards {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.card {
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--code-bg);
-}
-
-.card-header-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.card-body {
-  flex: 1;
-  min-width: 0;
-}
-
-.card-meta {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.badge {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 500;
-}
-
-.priorytet-niski {
-  background: rgba(34, 197, 94, 0.2);
-  color: #16a34a;
-}
-
-.priorytet-średni {
-  background: rgba(234, 179, 8, 0.2);
-  color: #ca8a04;
-}
-
-.priorytet-wysoki {
-  background: rgba(239, 68, 68, 0.2);
-  color: #dc2626;
-}
-
-.date {
-  font-size: 12px;
-  color: var(--text);
-}
-
-.card-title {
-  margin: 0 0 6px;
-  font-size: 16px;
-}
-
-.card-desc {
-  margin: 0;
-  font-size: 14px;
-  color: var(--text);
-  white-space: pre-wrap;
-}
-
-.card-actions {
-  display: flex;
-  gap: 4px;
-}
-
-.btn {
-  padding: 8px 16px;
-  border-radius: 8px;
-  font: inherit;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: white;
-}
-
-.btn-icon {
-  padding: 6px 10px;
-  background: transparent;
-  color: var(--text);
-}
-
-.btn-icon:hover {
-  background: var(--accent-bg);
-  color: var(--accent);
-}
-
-.btn-danger:hover {
-  background: rgba(220, 38, 38, 0.15);
-  color: #dc2626;
-}
-</style>

@@ -49,196 +49,110 @@ function assignUser(e: Event) {
 </script>
 
 <template>
-  <div v-if="modelValue && zadanie" class="modal-overlay" @click.self="close">
-    <div class="modal">
-      <header class="modal-header">
-        <h3>Szczegóły Zadania</h3>
-        <button class="close-btn" @click="close">✕</button>
-      </header>
-      <div class="modal-body">
-        <div class="detail-row">
-          <strong>Nazwa:</strong> {{ zadanie.nazwa }}
-        </div>
-        <div class="detail-row">
-          <strong>Opis:</strong>
-          <p class="desc">{{ zadanie.opis || 'Brak opisu.' }}</p>
-        </div>
-        <div class="grid">
-          <div class="detail-row">
-            <strong>Priorytet:</strong> <span class="badge">{{ zadanie.priorytet }}</span>
-          </div>
-          <div class="detail-row">
-            <strong>Stan:</strong> <span class="badge">{{ zadanie.stan }}</span>
-          </div>
-          <div class="detail-row">
-            <strong>Czas wykonania:</strong> {{ zadanie.przewidywanyCzasWykonania }} h
-          </div>
-          <div class="detail-row">
-            <strong>Przypisana osoba:</strong> {{ przypisanaOsoba }}
-          </div>
-          <div class="detail-row">
-            <strong>Data dodania:</strong> {{ formatDate(zadanie.dataDodania) }}
-          </div>
-          <div class="detail-row">
-            <strong>Data startu:</strong> {{ formatDate(zadanie.dataStartu) }}
-          </div>
-          <div class="detail-row">
-            <strong>Data zakończenia:</strong> {{ formatDate(zadanie.dataZakonczenia) }}
-          </div>
+  <dialog :open="modelValue && !!zadanie" class="custom-modal p-0 m-auto position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" @cancel.prevent="close">
+    <div class="modal-backdrop fade show" @click="close" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: -1;"></div>
+    
+    <div v-if="zadanie" class="card border-0 shadow-lg w-100" style="max-width: 650px; z-index: 10; max-height: 90vh;">
+      <div class="card-header bg-body d-flex justify-content-between align-items-center border-bottom py-3 px-4">
+        <h4 class="mb-0 fw-bold fs-5 text-truncate pe-3">Szczegóły: {{ zadanie.nazwa }}</h4>
+        <button type="button" class="btn-close" aria-label="Zakończ przeglądanie" @click="close"></button>
+      </div>
+      
+      <div class="card-body overflow-auto p-4">
+        <div class="mb-4">
+          <h6 class="text-muted fw-bold text-uppercase mb-2" style="font-size: 0.75rem;">Opis</h6>
+          <p class="mb-0 font-monospace text-body-secondary bg-body-tertiary p-3 rounded border" style="white-space: pre-wrap; font-size: 0.9rem;">
+            {{ zadanie.opis || 'Brak opisu dla tego zadania.' }}
+          </p>
         </div>
 
-        <div class="actions-box">
-          <div class="action-item" v-if="zadanie.stan === 'todo'">
-            <label>Przypisz do zadania (rozpocznij)</label>
-            <select @change="assignUser">
-              <option value="">Wybierz osobę...</option>
-              <option v-for="u in availableUsers" :key="u.id" :value="u.id">
-                {{ u.imię }} {{ u.nazwisko }} ({{ u.rola }})
-              </option>
-            </select>
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6">
+            <h6 class="text-muted fw-bold text-uppercase mb-1" style="font-size: 0.7s5rem;">Status</h6>
+            <div class="p-2 border rounded bg-body-tertiary">
+              <span class="badge w-100 py-2 fs-6 text-uppercase" 
+                    :class="{'text-bg-secondary': zadanie.stan === 'todo', 'text-bg-primary': zadanie.stan === 'doing', 'text-bg-success': zadanie.stan === 'done'}">
+                {{ zadanie.stan === 'todo' ? 'Zgłoszone' : (zadanie.stan === 'doing' ? 'W trakcie' : 'Zamknięte') }}
+              </span>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <h6 class="text-muted fw-bold text-uppercase mb-1" style="font-size: 0.75rem;">Priorytet</h6>
+            <div class="p-2 border rounded bg-body-tertiary">
+              <span class="badge w-100 py-2 fs-6 text-uppercase" 
+                    :class="{'text-bg-success': zadanie.priorytet === 'niski', 'text-bg-warning': zadanie.priorytet === 'średni', 'text-bg-danger': zadanie.priorytet === 'wysoki'}">
+                {{ zadanie.priorytet }}
+              </span>
+            </div>
           </div>
           
-          <div class="action-item" v-if="zadanie.stan === 'doing'">
-            <button class="btn btn-success" @click="emit('mark-done')">Zakończ zadanie (Done)</button>
+          <div class="col-sm-4">
+            <div class="border rounded px-3 py-2 bg-body-tertiary h-100">
+              <small class="text-muted d-block mb-1">Dodano</small>
+              <span class="fw-medium">{{ formatDate(zadanie.dataDodania) }}</span>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="border rounded px-3 py-2 bg-body-tertiary h-100">
+              <small class="text-muted d-block mb-1">Czas startu</small>
+              <span class="fw-medium">{{ formatDate(zadanie.dataStartu) }}</span>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="border rounded px-3 py-2 bg-body-tertiary h-100">
+              <small class="text-muted d-block mb-1">Zakończono</small>
+              <span class="fw-medium">{{ formatDate(zadanie.dataZakonczenia) }}</span>
+            </div>
           </div>
           
-          <div class="action-item right">
-            <button class="btn" @click="emit('edit')">Edytuj dane</button>
+          <div class="col-12">
+            <div class="border rounded px-3 py-2 bg-body-tertiary d-flex justify-content-between align-items-center">
+              <div>
+                <small class="text-muted d-block mb-1">Zasoby / Czas</small>
+                <span class="fw-medium">Estymacja: {{ zadanie.przewidywanyCzasWykonania }} godzin</span>
+              </div>
+              <div class="text-end">
+                <small class="text-muted d-block mb-1">Aktualnie obsługuje</small>
+                <div class="d-flex align-items-center justify-content-end gap-2">
+                  <span class="text-primary fs-5">👤</span> 
+                  <strong class="d-block">{{ przypisanaOsoba }}</strong>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+      
+      <div class="card-footer bg-body-tertiary p-3 d-flex flex-wrap gap-2 justify-content-between align-items-end border-top">
+        <div v-if="zadanie.stan === 'todo'" class="flex-grow-1" style="max-width: 300px;">
+          <label class="form-label text-muted small fw-bold mb-1">Przypisz i rozpocznij prace:</label>
+          <select class="form-select border-primary" @change="assignUser">
+            <option value="">Wybierz członka zespołu...</option>
+            <option v-for="u in availableUsers" :key="u.id" :value="u.id">
+              {{ u.imię }} {{ u.nazwisko }} ({{ u.rola }})
+            </option>
+          </select>
+        </div>
+        
+        <div v-else-if="zadanie.stan === 'doing'" class="flex-grow-1">
+          <button class="btn btn-success fw-bold px-4 py-2 hover-scale shadow-sm" @click="emit('mark-done')">
+            ✓ Zakończ Zadanie
+          </button>
+        </div>
+        
+        <div :class="{'ms-auto': zadanie.stan !== 'todo'}">
+          <button class="btn btn-outline-secondary" @click="emit('edit')">
+            Edytuj metadane ✎
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
+  </dialog>
 </template>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 16px;
-}
-
-.modal {
-  background: var(--bg);
-  width: 100%;
-  max-width: 600px;
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;
-  overflow: hidden;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
-}
-
-.modal-header h3 {
-  margin: 0;
-}
-
-.close-btn {
-  background: none;
+.custom-modal {
   border: none;
-  font-size: 20px;
-  color: var(--text);
-  cursor: pointer;
-}
-
-.modal-body {
-  padding: 20px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.detail-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  background: var(--code-bg);
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-}
-
-.desc {
-  margin: 0;
-  white-space: pre-wrap;
-  color: var(--text-h);
-}
-
-.badge {
-  display: inline-block;
-  padding: 2px 8px;
-  background: var(--accent-bg);
-  color: var(--accent);
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.actions-box {
-  border-top: 1px solid var(--border);
-  padding-top: 16px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: flex-end;
-}
-
-.action-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.right {
-  margin-left: auto;
-}
-
-select {
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--code-bg);
-  color: var(--text-h);
-  font: inherit;
-  min-width: 200px;
-}
-
-.btn {
-  padding: 10px 16px;
-  border-radius: 8px;
-  font: inherit;
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid transparent;
-  background: var(--code-bg);
-  border-color: var(--border);
-  color: var(--text);
-}
-
-.btn-success {
-  background: #16a34a;
-  color: white;
-  border: none;
+  background: transparent;
 }
 </style>

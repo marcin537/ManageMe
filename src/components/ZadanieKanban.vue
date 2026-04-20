@@ -118,41 +118,102 @@ async function syncHistoryjkaStatus() {
 </script>
 
 <template>
-  <div class="kanban-wrapper">
-    <div class="kanban-header">
-      <h4>Zadania Historyjki</h4>
-      <button class="btn btn-primary" @click="openCreate">+ Nowe zadanie</button>
+  <div class="mt-2 py-3 border-top">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="h5 mb-0 fw-bold d-flex align-items-center gap-2">
+        <span class="text-primary fs-4">📋</span> Panel Zadań
+      </h4>
+      <button class="btn btn-outline-primary btn-sm shadow-sm" @click="openCreate">
+        + Nowe zadanie
+      </button>
     </div>
     
-    <div v-if="loading" class="state-msg">Ładowanie zadań...</div>
-    <div v-else-if="zadania.length === 0" class="state-msg">Brak przypisanych zadań do tej historyjki.</div>
-    <div v-else class="kanban-board">
-      <div class="kanban-col">
-        <h5>Do zrobienia ({{ todo.length }})</h5>
-        <div class="cards">
-          <div class="card" v-for="z in todo" :key="z.id" @click="openDetails(z)">
-            <strong>{{ z.nazwa }}</strong>
-            <span class="badge">{{ z.priorytet }}</span>
+    <div v-if="loading" class="text-center p-4">
+      <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+      <span class="ms-2 text-muted">Ładowanie tablicy...</span>
+    </div>
+    
+    <div v-else-if="zadania.length === 0" class="text-center p-5 bg-body bg-opacity-50 rounded border border-dashed">
+      <p class="text-muted mb-0">Brak zadań w tej historyjce.</p>
+    </div>
+    
+    <div v-else class="kanban-container">
+      <div class="row flex-nowrap pb-3" style="min-width: 800px;">
+        <!-- Kolumna TODO -->
+        <div class="col-4 kanban-col">
+          <div class="bg-body-secondary p-3 rounded-3 h-100 border">
+            <h5 class="fs-6 fw-bold text-muted mb-3 d-flex justify-content-between align-items-center pb-2 border-bottom">
+              Do zrobienia
+              <span class="badge bg-secondary rounded-pill">{{ todo.length }}</span>
+            </h5>
+            <div class="d-flex flex-column gap-2">
+              <div 
+                class="card border-0 shadow-sm hover-scale cursor-pointer" 
+                v-for="z in todo" 
+                :key="z.id" 
+                @click="openDetails(z)"
+                role="button"
+              >
+                <div class="card-body p-3">
+                  <h6 class="card-title fw-bold mb-2">{{ z.nazwa }}</h6>
+                  <span class="badge" :class="[z.priorytet === 'wysoki' ? 'text-bg-danger' : z.priorytet === 'średni' ? 'text-bg-warning' : 'text-bg-success']">
+                    {{ z.priorytet }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div class="kanban-col">
-        <h5>W trakcie ({{ doing.length }})</h5>
-        <div class="cards">
-          <div class="card" v-for="z in doing" :key="z.id" @click="openDetails(z)">
-            <strong>{{ z.nazwa }}</strong>
-            <span class="badge">{{ z.priorytet }}</span>
+        
+        <!-- Kolumna DOING -->
+        <div class="col-4 kanban-col">
+          <div class="bg-body-secondary p-3 rounded-3 h-100 border">
+            <h5 class="fs-6 fw-bold text-primary mb-3 d-flex justify-content-between align-items-center pb-2 border-bottom border-primary border-opacity-25">
+              W trakcie
+              <span class="badge bg-primary rounded-pill">{{ doing.length }}</span>
+            </h5>
+            <div class="d-flex flex-column gap-2">
+              <div 
+                class="card border-0 border-start border-primary border-4 shadow-sm hover-scale cursor-pointer" 
+                v-for="z in doing" 
+                :key="z.id" 
+                @click="openDetails(z)"
+                role="button"
+              >
+                <div class="card-body p-3">
+                  <h6 class="card-title fw-bold mb-2">{{ z.nazwa }}</h6>
+                  <span class="badge" :class="[z.priorytet === 'wysoki' ? 'text-bg-danger' : z.priorytet === 'średni' ? 'text-bg-warning' : 'text-bg-success']">
+                    {{ z.priorytet }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div class="kanban-col">
-        <h5>Zamknięte ({{ done.length }})</h5>
-        <div class="cards">
-          <div class="card" v-for="z in done" :key="z.id" @click="openDetails(z)">
-            <strong>{{ z.nazwa }}</strong>
-            <span class="badge">{{ z.priorytet }}</span>
+        
+        <!-- Kolumna DONE -->
+        <div class="col-4 kanban-col">
+          <div class="bg-body-secondary p-3 rounded-3 h-100 border">
+            <h5 class="fs-6 fw-bold text-success mb-3 d-flex justify-content-between align-items-center pb-2 border-bottom border-success border-opacity-25">
+              Zamknięte
+              <span class="badge bg-success rounded-pill">{{ done.length }}</span>
+            </h5>
+            <div class="d-flex flex-column gap-2">
+              <div 
+                class="card border-0 custom-done shadow-sm hover-scale cursor-pointer" 
+                v-for="z in done" 
+                :key="z.id" 
+                @click="openDetails(z)"
+                role="button"
+              >
+                <div class="card-body p-3 text-muted">
+                  <h6 class="card-title fw-bold mb-2 text-decoration-line-through">{{ z.nazwa }}</h6>
+                  <span class="badge text-bg-secondary opacity-75">
+                    {{ z.priorytet }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -175,100 +236,13 @@ async function syncHistoryjkaStatus() {
 </template>
 
 <style scoped>
-.kanban-wrapper {
-  margin-top: 24px;
-  border-top: 1px solid var(--border);
-  padding-top: 24px;
+.custom-done {
+  opacity: 0.7;
 }
-
-.kanban-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.kanban-header h4 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.btn {
-  padding: 8px 16px;
-  border-radius: 8px;
-  font: inherit;
-  font-weight: 500;
+.cursor-pointer {
   cursor: pointer;
-  border: none;
 }
-
-.btn-primary {
-  background: var(--accent);
-  color: white;
-}
-
-.state-msg {
-  padding: 24px;
-  text-align: center;
-  color: var(--text);
-  background: var(--code-bg);
-  border-radius: 8px;
-}
-
-.kanban-board {
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 16px;
-}
-
-.kanban-col {
-  flex: 1;
-  min-width: 250px;
-  background: var(--code-bg);
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  border: 1px solid var(--border);
-}
-
-.kanban-col h5 {
-  margin: 0;
-  font-size: 14px;
-  color: var(--text-h);
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 8px;
-}
-
-.cards {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.card {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 12px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.card:hover {
-  background: var(--accent-bg);
-}
-
-.badge {
-  align-self: flex-start;
-  padding: 2px 6px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 11px;
+.border-dashed {
+  border-style: dashed !important;
 }
 </style>

@@ -57,31 +57,49 @@ async function remove(project: Project) {
 </script>
 
 <template>
-  <div class="project-list">
-    <header class="header">
-      <h1>TaskFlow</h1>
-      <p class="subtitle">Zarządzanie zadaniami i projektami</p>
-      <button class="btn btn-primary" @click="openCreate">+ Nowy projekt</button>
+  <div class="container py-3" style="max-width: 800px;">
+    <header class="d-flex justify-content-between align-items-end border-bottom pb-3 mb-4">
+      <div>
+        <h1 class="h2 fw-bold mb-1">Katalog Projektów</h1>
+        <p class="text-muted mb-0">Zarządzanie zadaniami i archiwum.</p>
+      </div>
+      <button class="btn btn-primary shadow-sm hover-scale" @click="openCreate">
+        + Nowy projekt
+      </button>
     </header>
 
-    <div v-if="loading" class="loading">Ładowanie…</div>
-
-    <div v-else-if="projects.length === 0" class="empty">
-      Brak projektów. Kliknij „Nowy projekt”, aby dodać pierwszy.
+    <div v-if="loading" class="d-flex justify-content-center p-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Ładowanie...</span>
+      </div>
     </div>
 
-    <ul v-else class="cards">
-      <li v-for="p in projects" :key="p.id" class="card">
-        <div class="card-body">
-          <h3 class="card-title">{{ p.nazwa }}</h3>
-          <p v-if="p.opis" class="card-desc">{{ p.opis }}</p>
+    <div v-else-if="projects.length === 0" class="text-center py-5 text-muted border rounded bg-body-tertiary">
+      <p class="lead mb-0">Brak utworzonych projektów.</p>
+      <small>Kliknij <strong>"Nowy projekt"</strong> aby rozpocząć rejestrację.</small>
+    </div>
+
+    <div v-else class="row g-3">
+      <div class="col-12" v-for="p in projects" :key="p.id">
+        <div class="card h-100 shadow-sm hover-scale border-0">
+          <div class="card-body d-flex flex-column flex-sm-row justify-content-between align-items-start gap-4">
+            <div class="text-break">
+              <h4 class="card-title h5 fw-semibold mb-2 text-primary">{{ p.nazwa }}</h4>
+              <p v-if="p.opis" class="card-text text-muted small mb-0">{{ p.opis }}</p>
+            </div>
+            
+            <div class="btn-group shadow-sm shrink-0">
+              <button class="btn btn-outline-secondary" title="Edytuj projekt" @click="openEdit(p)">
+                ✎ Edytuj
+              </button>
+              <button class="btn btn-outline-danger" title="Wymaż projekt z systemu" @click="remove(p)">
+                ✕ Usuń
+              </button>
+            </div>
+          </div>
         </div>
-        <div class="card-actions">
-          <button class="btn btn-icon" title="Edytuj" @click="openEdit(p)">✎</button>
-          <button class="btn btn-icon btn-danger" title="Usuń" @click="remove(p)">✕</button>
-        </div>
-      </li>
-    </ul>
+      </div>
+    </div>
 
     <ProjectForm
       v-model="showForm"
@@ -92,102 +110,7 @@ async function remove(project: Project) {
 </template>
 
 <style scoped>
-.project-list {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 32px 24px;
-}
-
-.header {
-  margin-bottom: 32px;
-}
-
-.header h1 {
-  margin: 0 0 8px;
-  font-size: 28px;
-}
-
-.subtitle {
-  color: var(--text);
-  margin: 0 0 20px;
-}
-
-.loading,
-.empty {
-  color: var(--text);
-  padding: 40px;
-  text-align: center;
-}
-
-.cards {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.card {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 20px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--code-bg);
-}
-
-.card-body {
-  flex: 1;
-  min-width: 0;
-}
-
-.card-title {
-  margin: 0 0 8px;
-  font-size: 18px;
-}
-
-.card-desc {
-  margin: 0;
-  font-size: 15px;
-  color: var(--text);
-  white-space: pre-wrap;
-}
-
-.card-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.btn {
-  padding: 10px 20px;
-  border-radius: 8px;
-  font: inherit;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: white;
-}
-
-.btn-icon {
-  padding: 8px 12px;
-  background: transparent;
-  color: var(--text);
-}
-
-.btn-icon:hover {
-  background: var(--accent-bg);
-  color: var(--accent);
-}
-
-.btn-danger:hover {
-  background: rgba(220, 38, 38, 0.15);
-  color: #dc2626;
+.shrink-0 {
+  flex-shrink: 0;
 }
 </style>

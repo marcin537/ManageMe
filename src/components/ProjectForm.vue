@@ -49,123 +49,60 @@ function close() {
 </script>
 
 <template>
-  <dialog ref="dialogRef" class="modal" @cancel="close" @close="emit('update:modelValue', false)">
-    <div class="modal-content">
-      <h2>{{ isEditing() ? 'Edytuj projekt' : 'Nowy projekt' }}</h2>
-      <form @submit.prevent="handleSubmit">
-        <div class="field">
-          <label for="nazwa">Nazwa</label>
-          <input
-            id="nazwa"
-            v-model="nazwa"
-            type="text"
-            required
-            placeholder="Nazwa projektu"
-            autocomplete="off"
-          />
-        </div>
-        <div class="field">
-          <label for="opis">Opis</label>
-          <textarea
-            id="opis"
-            v-model="opis"
-            rows="4"
-            placeholder="Opis projektu"
-          />
-        </div>
-        <div class="actions">
-          <button type="button" class="btn btn-secondary" @click="close">Anuluj</button>
-          <button type="submit" class="btn btn-primary">
-            {{ isEditing() ? 'Zapisz' : 'Dodaj' }}
-          </button>
-        </div>
-      </form>
+  <dialog ref="dialogRef" class="custom-modal p-0" @cancel="close" @close="emit('update:modelValue', false)">
+    <div class="card border-0 shadow" style="width: 100%; max-width: 500px; margin: 0 auto;">
+      <div class="card-header bg-body-tertiary">
+        <h5 class="mb-0 fw-bold">{{ isEditing() ? 'Edytowanie Projektu' : 'Tworzenie Nowego Projektu' }}</h5>
+      </div>
+      <div class="card-body">
+        <form @submit.prevent="handleSubmit">
+          <div class="mb-3">
+            <label for="nazwa" class="form-label fw-medium">Tytuł projektu <span class="text-danger">*</span></label>
+            <input
+              id="nazwa"
+              v-model="nazwa"
+              type="text"
+              class="form-control"
+              required
+              placeholder="np. Aplikacja Kanban..."
+              autocomplete="off"
+            />
+          </div>
+          
+          <div class="mb-4">
+            <label for="opis" class="form-label fw-medium">Szczegóły / Opis</label>
+            <textarea
+              id="opis"
+              v-model="opis"
+              rows="4"
+              class="form-control"
+              placeholder="Zanotuj krótki opis ułatwiający rozpoznanie celu..."
+            />
+          </div>
+
+          <div class="d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-outline-secondary" @click="close">Anuluj</button>
+            <button type="submit" class="btn btn-primary px-4">
+              {{ isEditing() ? 'Zapisz dane' : 'Dodaj projekt' }}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </dialog>
 </template>
 
 <style scoped>
-.modal {
+.custom-modal {
   border: none;
-  border-radius: 12px;
-  padding: 0;
-  max-width: 420px;
+  border-radius: 0.5rem;
+  background: transparent;
   width: 90vw;
-  box-shadow: var(--shadow);
+  max-width: 500px;
 }
 
-.modal::backdrop {
-  background: rgba(0, 0, 0, 0.4);
-}
-
-.modal-content {
-  position: relative;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 420px;
-  width: 90%;
-  box-shadow: var(--shadow);
-}
-
-.modal-content h2 {
-  margin: 0 0 20px;
-  font-size: 20px;
-}
-
-.field {
-  margin-bottom: 16px;
-}
-
-.field label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-h);
-  margin-bottom: 6px;
-}
-
-.field input,
-.field textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font: inherit;
-  color: var(--text-h);
-  background: var(--code-bg);
-  box-sizing: border-box;
-}
-
-.field textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
-}
-
-.btn {
-  padding: 10px 20px;
-  border-radius: 8px;
-  font: inherit;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: white;
-}
-
-.btn-secondary {
-  background: var(--code-bg);
-  color: var(--text-h);
+.custom-modal::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
 }
 </style>

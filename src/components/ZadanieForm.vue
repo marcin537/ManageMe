@@ -60,146 +60,55 @@ function handleSubmit() {
 </script>
 
 <template>
-  <div v-if="modelValue" class="modal-overlay" @click.self="close">
-    <div class="modal">
-      <header class="modal-header">
-        <h3>{{ zadanie ? 'Edytuj zadanie' : 'Nowe zadanie' }}</h3>
-        <button class="close-btn" @click="close">✕</button>
-      </header>
-      <form class="form" @submit.prevent="handleSubmit">
-        <div class="field">
-          <label>Nazwa</label>
-          <input v-model="nazwa" required />
-        </div>
-        <div class="field">
-          <label>Opis</label>
-          <textarea v-model="opis" rows="3"></textarea>
-        </div>
-        <div class="field-row">
-          <div class="field">
-            <label>Priorytet</label>
-            <select v-model="priorytet">
-              <option value="niski">Niski</option>
-              <option value="średni">Średni</option>
-              <option value="wysoki">Wysoki</option>
-            </select>
+  <dialog :open="modelValue" class="custom-modal p-0 m-auto position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" @cancel.prevent="close">
+    <div class="modal-backdrop fade show" @click="close" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: -1;"></div>
+    
+    <div class="card border-0 shadow-lg w-100" style="max-width: 500px; z-index: 10;">
+      <div class="card-header bg-body-tertiary d-flex justify-content-between align-items-center py-3 px-4 border-bottom">
+        <h5 class="mb-0 fw-bold">{{ zadanie ? 'Edycja Specyfikacji Zadania' : 'Nowe Zadanie w Kanban' }}</h5>
+        <button type="button" class="btn-close" aria-label="Anuluj" @click="close"></button>
+      </div>
+      
+      <div class="card-body p-4">
+        <form @submit.prevent="handleSubmit">
+          <div class="mb-3">
+            <label class="form-label fw-medium text-muted small text-uppercase">Tytuł Zgłoszenia <span class="text-danger">*</span></label>
+            <input v-model="nazwa" type="text" class="form-control form-control-lg fs-6" placeholder="Krótka i zwięzła nazwa..." required />
           </div>
-          <div class="field">
-            <label>Czas wykonania (h)</label>
-            <input type="number" min="1" v-model.number="przewidywanyCzasWykonania" required />
+          
+          <div class="mb-3">
+            <label class="form-label fw-medium text-muted small text-uppercase">Pełny Opis</label>
+            <textarea v-model="opis" class="form-control" rows="3" placeholder="Dodatkowe informacje i kryteria akceptacji..."></textarea>
           </div>
-        </div>
-        <footer class="modal-footer">
-          <button type="button" class="btn" @click="close">Anuluj</button>
-          <button type="submit" class="btn btn-primary">Zapisz</button>
-        </footer>
-      </form>
+          
+          <div class="row g-3 mb-4">
+            <div class="col-sm-6">
+              <label class="form-label fw-medium text-muted small text-uppercase">Priorytet Zgłoszenia</label>
+              <select v-model="priorytet" class="form-select">
+                <option value="niski">Niski (Trivial)</option>
+                <option value="średni">Średni (Normal)</option>
+                <option value="wysoki">Wysoki (Critical)</option>
+              </select>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-medium text-muted small text-uppercase">Złożoność (w godzinach)</label>
+              <input type="number" min="1" v-model.number="przewidywanyCzasWykonania" class="form-control" required />
+            </div>
+          </div>
+          
+          <div class="d-flex justify-content-end gap-2 border-top pt-3 mt-2">
+            <button type="button" class="btn btn-outline-secondary" @click="close">Anuluj operację</button>
+            <button type="submit" class="btn btn-primary px-4 fw-bold">Zapisz zadanie</button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
+  </dialog>
 </template>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 16px;
-}
-
-.modal {
-  background: var(--bg);
-  width: 100%;
-  max-width: 500px;
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
-}
-
-.modal-header h3 {
-  margin: 0;
-}
-
-.close-btn {
-  background: none;
+.custom-modal {
   border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: var(--text);
-}
-
-.form {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-}
-
-.field-row {
-  display: flex;
-  gap: 16px;
-}
-
-.field label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-.field input,
-.field textarea,
-.field select {
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--code-bg);
-  color: var(--text-h);
-  font: inherit;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.btn {
-  padding: 8px 16px;
-  border-radius: 8px;
-  font: inherit;
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid transparent;
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: white;
-}
-
-.btn:not(.btn-primary) {
-  background: var(--code-bg);
-  border-color: var(--border);
-  color: var(--text);
+  background: transparent;
 }
 </style>

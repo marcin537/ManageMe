@@ -16,24 +16,33 @@ const showEmptyState = computed(
 </script>
 
 <template>
-  <div class="app">
+  <div class="d-flex flex-column min-vh-100">
     <AppHeader @manage-projects="showProjectsManager = true" />
-    <main class="main">
-      <div v-if="showProjectsManager" class="view">
-        <div class="view-header">
-          <button class="btn btn-back" @click="showProjectsManager = false">
-            ← Powrót
+    
+    <main class="flex-grow-1 py-4 container-fluid px-4 px-lg-5">
+      <div v-if="showProjectsManager">
+        <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+          <h2 class="mb-0 fs-3">Moje Projekty</h2>
+          <button class="btn btn-outline-secondary btn-sm" @click="showProjectsManager = false">
+            ← Powrót do tablic
           </button>
         </div>
         <ProjectList />
       </div>
-      <div v-else-if="showEmptyState" class="empty-state">
-        <p>Wybierz projekt w nagłówku lub dodaj nowy.</p>
-        <button class="btn btn-primary" @click="showProjectsManager = true">
-          Zarządzaj projektami
-        </button>
+      
+      <div v-else-if="showEmptyState" class="d-flex justify-content-center mt-5">
+        <div class="card shadow-sm text-center p-5" style="max-width: 500px;">
+          <h3 class="card-title fw-bold">Witaj w TaskFlow</h3>
+          <p class="card-text text-muted mb-4">
+            Wybierz istniejący projekt z paska na górze lub przejdź do panelu zarządzania projektami, aby utworzyć nowy.
+          </p>
+          <button class="btn btn-primary btn-lg w-100 hover-scale" @click="showProjectsManager = true">
+            Skonfiguruj projekty
+          </button>
+        </div>
       </div>
-      <div v-else class="view">
+      
+      <div v-else>
         <HistoryjkiList v-if="activeProjectId" :project-id="activeProjectId" />
       </div>
     </main>
@@ -41,62 +50,5 @@ const showEmptyState = computed(
 </template>
 
 <style scoped>
-.app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.main {
-  flex: 1;
-}
-
-.view {
-  padding-bottom: 32px;
-}
-
-.view-header {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 16px 24px 0;
-}
-
-.btn-back {
-  padding: 8px 0;
-  border: none;
-  background: none;
-  color: var(--text);
-  font: inherit;
-  cursor: pointer;
-}
-
-.btn-back:hover {
-  color: var(--accent);
-}
-
-.empty-state {
-  max-width: 400px;
-  margin: 48px auto;
-  padding: 24px;
-  text-align: center;
-}
-
-.empty-state p {
-  margin: 0 0 16px;
-  color: var(--text);
-}
-
-.btn {
-  padding: 10px 20px;
-  border-radius: 8px;
-  font: inherit;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: white;
-}
+/* Dodatkowe czyszczenie po starym app vue znajduje się w style.css */
 </style>
