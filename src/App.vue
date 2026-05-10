@@ -1,26 +1,42 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import ProjectList from './components/ProjectList.vue'
 import HistoryjkiList from './components/HistoryjkiList.vue'
+import NotificationsView from './components/NotificationsView.vue'
+import NotificationDialog from './components/NotificationDialog.vue'
 import { useActiveProject } from './composables/useActiveProject'
+import { useNotifications } from './composables/useNotifications'
 
 const { activeProjectId, initActiveProject } = useActiveProject()
-const showProjectsManager = ref(false)
+const { load: loadNotifications } = useNotifications()
 
-initActiveProject()
+const showProjectsManager = ref(false)
+const showNotifications = ref(false)
+
+onMounted(async () => {
+  await initActiveProject()
+  await loadNotifications()
+})
 
 const showEmptyState = computed(
-  () => !showProjectsManager.value && !activeProjectId.value
+  () => !showProjectsManager.value && !showNotifications.value && !activeProjectId.value
 )
 </script>
 
 <template>
-  <div class="d-flex flex-column min-vh-100">
-    <AppHeader @manage-projects="showProjectsManager = true" />
+  <div class="d-flex flex-column min-vh-100 position-relative">
+    <AppHeader 
+      @manage-projects="showProjectsManager = true; showNotifications = false" 
+      @show-notifications="showNotifications = true; showProjectsManager = false"
+    />
     
     <main class="flex-grow-1 py-4 container-fluid px-4 px-lg-5">
-      <div v-if="showProjectsManager">
+      <div v-if="showNotifications">
+        <NotificationsView @back="showNotifications = false" />
+      </div>
+      
+      <div v-else-if="showProjectsManager">
         <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
           <h2 class="mb-0 fs-3">Moje Projekty</h2>
           <button class="btn btn-outline-secondary btn-sm" @click="showProjectsManager = false">
@@ -36,7 +52,7 @@ const showEmptyState = computed(
           <p class="card-text text-muted mb-4">
             Wybierz istniejący projekt z paska na górze lub przejdź do panelu zarządzania projektami, aby utworzyć nowy.
           </p>
-          <button class="btn btn-primary btn-lg w-100 hover-scale" @click="showProjectsManager = true">
+          <button class="btn btn-primary btn-lg w-100 hover-scale" @click="showProjectsManager = true; showNotifications = false">
             Skonfiguruj projekty
           </button>
         </div>
@@ -45,6 +61,8 @@ const showEmptyState = computed(
       <div v-else>
         <HistoryjkiList v-if="activeProjectId" :project-id="activeProjectId" />
       </div>
+      
+      <NotificationDialog />
     </main>
   </div>
 </template>

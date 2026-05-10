@@ -5,12 +5,15 @@ import { useActiveProject } from '../composables/useActiveProject'
 import { projectsApi } from '../api/projectsApi'
 import type { Project } from '../types/project'
 import { useTheme } from '../composables/useTheme'
+import { useNotifications } from '../composables/useNotifications'
 
 const { activeProjectId, setActiveProject, initActiveProject } = useActiveProject()
 const { theme, toggleTheme } = useTheme()
+const { unreadCount } = useNotifications()
 
 const emit = defineEmits<{
   (e: 'manage-projects'): void
+  (e: 'show-notifications'): void
 }>()
 const projects = ref<Project[]>([])
 const showProjectsDropdown = ref(false)
@@ -103,7 +106,16 @@ watch(showProjectsDropdown, async (open) => {
         <button class="btn btn-link text-decoration-none-hover text-body" @click="emit('manage-projects')">
           Zarządzaj Projektami
         </button>
-        <span class="navbar-text fw-medium text-body-emphasis">
+        
+        <button class="btn btn-outline-secondary position-relative d-flex align-items-center justify-content-center rounded-circle" style="width: 40px; height: 40px;" @click="emit('show-notifications')" title="Powiadomienia">
+          <span>🔔</span>
+          <span v-if="unreadCount > 0" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+            {{ unreadCount > 99 ? '99+' : unreadCount }}
+            <span class="visually-hidden">nieprzeczytanych powiadomień</span>
+          </span>
+        </button>
+        
+        <span class="navbar-text fw-medium text-body-emphasis ms-2">
           {{ userFullName }}
         </span>
         <button class="btn btn-outline-secondary d-flex align-items-center justify-content-center rounded-circle" style="width: 40px; height: 40px;" @click="toggleTheme" title="Zmień motyw">

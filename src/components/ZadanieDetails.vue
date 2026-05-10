@@ -13,6 +13,7 @@ const emit = defineEmits<{
   (e: 'assign', userId: string): void
   (e: 'mark-done'): void
   (e: 'edit'): void
+  (e: 'delete'): void
 }>()
 
 const availableUsers = computed(() =>
@@ -140,7 +141,10 @@ function assignUser(e: Event) {
           </button>
         </div>
         
-        <div :class="{'ms-auto': zadanie.stan !== 'todo'}">
+        <div :class="{'ms-auto': zadanie.stan !== 'todo'}" class="d-flex gap-2">
+          <button class="btn btn-outline-danger" @click="emit('delete')">
+            Usuń 🗑️
+          </button>
           <button class="btn btn-outline-secondary" @click="emit('edit')">
             Edytuj metadane ✎
           </button>

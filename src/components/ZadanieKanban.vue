@@ -6,6 +6,8 @@ import { historyjkiApi } from '../api/historyjkiApi'
 import ZadanieForm from './ZadanieForm.vue'
 import ZadanieDetails from './ZadanieDetails.vue'
 import type { Historyjka } from '../types/historyjka'
+import { useNotifications } from '../composables/useNotifications'
+import { currentUserService } from '../services/currentUserService'
 
 const props = defineProps<{
   historyjkaId: string
@@ -22,6 +24,8 @@ const showForm = ref(false)
 const showDetails = ref(false)
 const editingZadanie = ref<Zadanie | null>(null)
 const selectedZadanie = ref<Zadanie | null>(null)
+
+const { addNotification } = useNotifications()
 
 const todo = computed(() => zadania.value.filter((z) => z.stan === 'todo'))
 const doing = computed(() => zadania.value.filter((z) => z.stan === 'doing'))
@@ -65,6 +69,17 @@ async function handleFormSubmit(data: any) {
     })
     zadania.value.push(created)
     await syncHistoryjkaStatus()
+    
+    // Notification: New task
+    const h = await historyjkiApi.getById(props.historyjkaId)
+    if (h && h.właściciel) {
+      await addNotification({
+        title: 'Nowe zadanie',
+        message: `W historyjce "${h.nazwa}" dodano nowe zadanie: ${created.nazwa}`,
+        priority: 'medium',
+        recipientId: h.właściciel
+      })
+    }
   }
 }
 
@@ -80,6 +95,26 @@ async function assignUser(userId: string) {
     if (idx !== -1) zadania.value[idx] = u
     selectedZadanie.value = u
     await syncHistoryjkaStatus()
+    
+    // Notification: Assign user
+    const currentUserName = currentUserService.fullName
+    await addNotification({
+      title: 'Przypisano zadanie',
+      message: `${currentUserName} przypisał/a Cię do zadania: ${u.nazwa}`,
+      priority: 'high',
+      recipientId: userId
+    })
+    
+    // Notification: Status change (doing -> low)
+    const h = await historyjkiApi.getById(props.historyjkaId)
+    if (h && h.właściciel) {
+      await addNotification({
+        title: 'Zmiana statusu zadania',
+        message: `Zadanie "${u.nazwa}" zmieniło status na "W trakcie".`,
+        priority: 'low',
+        recipientId: h.właściciel
+      })
+    }
   }
 }
 
@@ -94,6 +129,40 @@ async function markDone() {
     if (idx !== -1) zadania.value[idx] = u
     selectedZadanie.value = u
     await syncHistoryjkaStatus()
+    
+    // Notification: Status change (done -> medium)
+    const h = await historyjkiApi.getById(props.historyjkaId)
+    if (h && h.właściciel) {
+      await addNotification({
+        title: 'Zmiana statusu zadania',
+        message: `Zadanie "${u.nazwa}" zostało zakończone.`,
+        priority: 'medium',
+        recipientId: h.właściciel
+      })
+    }
+  }
+}
+
+async function deleteTask() {
+  if (!selectedZadanie.value) return
+  const z = selectedZadanie.value
+  const success = await zadaniaApi.delete(z.id)
+  if (success) {
+    zadania.value = zadania.value.filter(x => x.id !== z.id)
+    showDetails.value = false
+    selectedZadanie.value = null
+    await syncHistoryjkaStatus()
+    
+    // Notification: Delete task
+    const h = await historyjkiApi.getById(props.historyjkaId)
+    if (h && h.właściciel) {
+      await addNotification({
+        title: 'Usunięto zadanie',
+        message: `Zadanie "${z.nazwa}" zostało usunięte z historyjki "${h.nazwa}".`,
+        priority: 'medium',
+        recipientId: h.właściciel
+      })
+    }
   }
 }
 
@@ -230,6 +299,7 @@ async function syncHistoryjkaStatus() {
       :zadanie="selectedZadanie"
       @assign="assignUser"
       @mark-done="markDone"
+      @delete="deleteTask"
       @edit="() => { showDetails = false; editingZadanie = selectedZadanie; showForm = true }"
     />
   </div>

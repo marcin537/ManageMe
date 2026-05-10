@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { Project } from '../types/project'
+import { useNotifications } from '../composables/useNotifications'
+import { currentUserService } from '../services/currentUserService'
 
 const props = defineProps<{
   modelValue: boolean
@@ -37,10 +39,26 @@ watch(
 
 const isEditing = () => !!props.project
 
-function handleSubmit() {
+const { addNotification } = useNotifications()
+
+async function handleSubmit() {
   if (!nazwa.value.trim()) return
+  const isNew = !isEditing()
   emit('submit', { nazwa: nazwa.value.trim(), opis: opis.value.trim() })
   emit('update:modelValue', false)
+  
+  if (isNew) {
+    const admins = currentUserService.getAllUsers().filter(u => u.rola === 'admin')
+    const currentUserName = currentUserService.fullName
+    for (const admin of admins) {
+      await addNotification({
+        title: 'Nowy Projekt',
+        message: `Użytkownik ${currentUserName} utworzył nowy projekt: ${nazwa.value.trim()}`,
+        priority: 'high',
+        recipientId: admin.id
+      })
+    }
+  }
 }
 
 function close() {
